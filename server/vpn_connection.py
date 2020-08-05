@@ -1,8 +1,9 @@
 from urllib.parse import urlparse
 
-from lib.ssocket import tcp_connect, socket_transfer
+from lib.ssocket import tcp_connect
+from lib.ssocket.ssocket import TransferSocket
 from lib.crypto.dhe import server_dhe_response
-from lib.crypto.aes import aes_encrypt, aes_decrypt
+from lib.crypto.aes import get_cryptors
 
 VPN_CONNECTION_LENGTH = 1024
 CONNECT = 'CONNECT'
@@ -29,19 +30,27 @@ class VPNConnection:
         self.max_request_len = max_request_len
         self.connection_timeout = connection_timeout
         self.outgoing_socket = None
-        self.shared_key = None
+        self.encryptor = None
+        self.decryptor = None
 
     def setup_connection(self):
         client_req = self.client_socket.recv(VPN_CONNECTION_LENGTH)
-        self.shared_key, server_response = server_dhe_response(client_req)
+        shared_key, server_response = server_dhe_response(client_req)
         self.client_socket.sendall(server_response)
+        self.encryptor, self.decryptor = get_cryptors(shared_key)
+
+    def client_recv(self):
+        buf = self.client_socket.recv(self.max_request_len)
+        return self.decryptor.update(buf).decode()
+
+    def client_send(self, buf):
+        return self.client_socket.sendall(self.encryptor.update(buf))
 
     def run(self):
         self.setup_connection()
 
-        request = self.client_socket.recv(self.max_request_len).decode()
+        request = self.client_recv()
         lines = request.split('\r\n')
-
         method, url, protocol = lines[0].split()
         address, port = get_ip_port(method, url)
 
@@ -55,12 +64,20 @@ class VPNConnection:
             return
 
         try:
+            transfer_socket = TransferSocket(
+                self.client_socket,
+                self.outgoing_socket,
+                lambda b: self.decryptor.update(b),
+                lambda b: self.encryptor.update(b),
+                max_request_len=self.max_request_len
+            )
+
             if method == CONNECT:
-                self.client_socket.sendall(CONNECT_SUCCESS)
+                self.client_send(CONNECT_SUCCESS)
             else:
                 self.outgoing_socket.sendall(request.encode())
 
-            client_bytes, incoming_bytes = socket_transfer(self.client_socket, self.outgoing_socket, max_request_len=self.max_request_len)
+            client_bytes, incoming_bytes = transfer_socket.run()
 
             self.sslogger.log_finished_http_req(protocol, method, client_bytes, incoming_bytes)
         except Exception as e:

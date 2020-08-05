@@ -1,6 +1,8 @@
-from lib.ssocket import tcp_connect, socket_transfer
+from lib.ssocket import tcp_connect
+from lib.ssocket.ssocket import TransferSocket
+
 from lib.crypto.dhe import client_dhe_request, client_dhe_finish
-from lib.crypto.aes import aes_encrypt, aes_decrypt
+from lib.crypto.aes import get_cryptors
 
 VPN_CONNECTION_LENGTH = 1024
 
@@ -14,14 +16,16 @@ class ClientConnection:
         self.max_request_len = max_request_len
         self.connection_timeout = connection_timeout
         self.vpn_socket = None
-        self.shared_key = None
+        self.encryptor = None
+        self.decryptor = None
 
     def vpn_connect(self):
         self.vpn_socket = tcp_connect(*self.server, connection_timeout=self.connection_timeout)
         private_key, request = client_dhe_request()
         self.vpn_socket.sendall(request)
         server_resp = self.vpn_socket.recv(VPN_CONNECTION_LENGTH)
-        self.shared_key = client_dhe_finish(private_key, server_resp)
+        shared_key = client_dhe_finish(private_key, server_resp)
+        self.encryptor, self.decryptor = get_cryptors(shared_key)
 
     def run(self):
         try:
@@ -32,8 +36,18 @@ class ClientConnection:
             return
 
         try:
+            transfer_socket = TransferSocket(
+                self.client_socket,
+                self.vpn_socket,
+                lambda b: self.encryptor.update(b),
+                lambda b: self.decryptor.update(b),
+                max_request_len=self.max_request_len
+            )
+
             self.sslogger.info(f"starting connection")
-            client_bytes, incoming_bytes = socket_transfer(self.client_socket, self.vpn_socket, max_request_len=self.max_request_len)
+
+            client_bytes, incoming_bytes = transfer_socket.run()
+
             self.sslogger.info(f"closing connection")
         except Exception as e:
             self.sslogger.error(f"transfer failed: {e}")
