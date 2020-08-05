@@ -1,8 +1,7 @@
 import argparse
-import sys
 
 from server import Server
-import sslogger
+import lib.sslogger as sslogger
 
 parser = argparse.ArgumentParser(description='Runs a Smokescreen VPN server.')
 parser.add_argument('--hostname', metavar='HOSTNAME', type=str,

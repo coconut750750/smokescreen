@@ -1,7 +1,7 @@
 import socket
 import signal
 import threading
-import sslogger
+import lib.sslogger as sslogger
 
 from server.proxy_thread import pthread
 
