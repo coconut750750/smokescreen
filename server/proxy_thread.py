@@ -1,9 +1,18 @@
 from urllib.parse import urlparse
 
 from lib.ssocket import tcp_connect, socket_transfer
+from lib.crypto.dhe import server_dhe_response
 
+VPN_CONNECTION_LENGTH = 1024
 CONNECT = 'CONNECT'
 CONNECT_SUCCESS = b'HTTP/1.1 200 OK\r\n\r\n'
+
+def setup_connection(client_socket):
+    client_req = client_socket.recv(VPN_CONNECTION_LENGTH)
+    shared_key, server_response = server_dhe_response(client_req)
+    client_socket.sendall(server_response)
+
+    return shared_key
 
 def get_ip_port(method, url):
     parsed_uri = urlparse(url)
@@ -19,6 +28,8 @@ def get_ip_port(method, url):
     return address, int(port)
 
 def pthread(client_socket, client_addr, sslogger, max_request_len=1024, connection_timeout=10):
+    shared_key = setup_connection(client_socket)
+
     request = client_socket.recv(max_request_len).decode()
     lines = request.split('\r\n')
     client_addr_str = f'{client_addr[0]}:{client_addr[1]}'

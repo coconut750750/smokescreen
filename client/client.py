@@ -34,7 +34,7 @@ class Proxy:
             t.join()
         self.server_socket.close()
 
-    def _getClientName(self, addr):
+    def format_client_name(self, addr):
         return f'phc-{addr[0]}:{addr[1]}'
 
     def start(self):
@@ -43,7 +43,7 @@ class Proxy:
                 client_socket, client_address = self.server_socket.accept()
                 self.logger.info(f'recieved client at {client_address}')
                 
-                thread_name = self._getClientName(client_address)
+                thread_name = self.format_client_name(client_address)
 
                 c = threading.Thread(
                     name=thread_name,
