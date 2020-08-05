@@ -2,6 +2,7 @@ from urllib.parse import urlparse
 
 from lib.ssocket import tcp_connect, socket_transfer
 from lib.crypto.dhe import server_dhe_response
+from lib.crypto.aes import aes_encrypt, aes_decrypt
 
 VPN_CONNECTION_LENGTH = 1024
 CONNECT = 'CONNECT'

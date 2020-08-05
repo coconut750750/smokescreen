@@ -3,7 +3,7 @@ import signal
 import threading
 import lib.sslogger as sslogger
 
-from client.thread import pthread
+from client.client_connection import ClientConnection
 
 HOSTNAME = 'localhost'
 
@@ -44,12 +44,11 @@ class Proxy:
                 self.logger.info(f'recieved client at {client_address}')
                 
                 thread_name = self.format_client_name(client_address)
+                connection = ClientConnection(client_socket, client_address, self.server, sslogger.ColoredLogger(thread_name), max_request_len=self.config.buffer, connection_timeout=self.config.timeout)
 
                 c = threading.Thread(
                     name=thread_name,
-                    target=pthread,
-                    args=(client_socket, client_address, self.server, sslogger.ColoredLogger(thread_name)),
-                    kwargs=dict(max_request_len=self.config.buffer, connection_timeout=self.config.timeout)
+                    target=connection.run,
                 )
                 c.setDaemon(True)
                 c.start()

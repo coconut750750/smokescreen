@@ -4,13 +4,14 @@ from cryptography.hazmat.primitives.asymmetric import dh
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat, ParameterFormat, load_der_public_key, load_der_parameters
 
-KEY_SIZE = 2048
+KEY_SIZE = 512
 G = 2
 BACKEND = default_backend()
 ENCODING = Encoding.DER
 PARAM_FORMAT = ParameterFormat.PKCS3
 KEY_FORMAT = PublicFormat.SubjectPublicKeyInfo
 INFO = b'smokescreen handshake'
+SHARED_KEY_LEN = 48
 
 def dhe_generate_params():
     parameters = dh.generate_parameters(generator=G, key_size=KEY_SIZE, backend=BACKEND)
@@ -56,12 +57,12 @@ def server_dhe_response(client_req):
     params_ser, client_key_ser = extract_from_client_request(client_req)
     private_key = dhe_generate_key(params_ser)
     public_key_ser = dhe_serialize(private_key)
-    shared_key = dhe_generated_shared(private_key, client_key_ser, 32)
+    shared_key = dhe_generated_shared(private_key, client_key_ser, SHARED_KEY_LEN)
 
     return shared_key, public_key_ser
 
 def client_dhe_finish(private_key, server_resp):
-    shared_key = dhe_generated_shared(private_key, server_resp, 32)
+    shared_key = dhe_generated_shared(private_key, server_resp, SHARED_KEY_LEN)
     return shared_key
 
 if __name__ == '__main__':
