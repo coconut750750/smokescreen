@@ -5,12 +5,12 @@ from lib.crypto.aes import aes_encrypt, aes_decrypt
 VPN_CONNECTION_LENGTH = 1024
 
 class ClientConnection:
-    def __init__(self, client_socket, client_addr, server, logger, max_request_len=1024, connection_timeout=10):
+    def __init__(self, client_socket, client_addr, server, sslogger, max_request_len=1024, connection_timeout=10):
         self.client_socket = client_socket
         self.client_addr = client_addr
         self.client_addr_str = f'{client_addr[0]}:{client_addr[1]}'
         self.server = server
-        self.logger = logger
+        self.sslogger = sslogger
         self.max_request_len = max_request_len
         self.connection_timeout = connection_timeout
         self.vpn_socket = None
@@ -27,16 +27,16 @@ class ClientConnection:
         try:
             self.vpn_connect()
         except Exception as e:
-            self.logger.error(f"failed to connect to server error: {e}")
+            self.sslogger.error(f"failed to connect to server error: {e}")
             self.client_socket.close()
             return
 
         try:
-            self.logger.info(f"starting connection")
+            self.sslogger.info(f"starting connection")
             client_bytes, incoming_bytes = socket_transfer(self.client_socket, self.vpn_socket, max_request_len=self.max_request_len)
-            self.logger.info(f"closing connection")
+            self.sslogger.info(f"closing connection")
         except Exception as e:
-            self.logger.error(f"transfer failed: {e}")
+            self.sslogger.error(f"transfer failed: {e}")
         finally:
             self.client_socket.close()
             self.vpn_socket.close()
