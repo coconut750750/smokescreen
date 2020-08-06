@@ -23,12 +23,13 @@ def get_ip_port(method, url):
     return address, int(port)
 
 class VPNConnection:
-    def __init__(self, client_socket, client_addr, sslogger, max_request_len=1024, connection_timeout=10):
+    def __init__(self, client_socket, client_addr, sslogger, max_request_len=1024, connection_timeout=10, encrypted=True):
         self.client_socket = client_socket
         self.client_addr = client_addr
         self.sslogger = sslogger
         self.max_request_len = max_request_len
         self.connection_timeout = connection_timeout
+        self.encrypted = encrypted
         self.outgoing_socket = None
         self.encryptor = None
         self.decryptor = None
@@ -46,8 +47,19 @@ class VPNConnection:
     def client_send(self, buf):
         return self.client_socket.sendall(self.encryptor.update(buf))
 
+    def transform_client_bytes(self, b):
+        if self.encrypted:
+            return self.decryptor.update(b)
+        return b
+
+    def transform_incoming_bytes(self, b):
+        if self.encrypted:
+            return self.encryptor.update(b)
+        return b
+
     def run(self):
-        self.setup_connection()
+        if self.encrypted:
+            self.setup_connection()
 
         request = self.client_recv()
         lines = request.split('\r\n')
@@ -67,8 +79,8 @@ class VPNConnection:
             transfer_socket = TransferSocket(
                 self.client_socket,
                 self.outgoing_socket,
-                lambda b: self.decryptor.update(b),
-                lambda b: self.encryptor.update(b),
+                self.transform_client_bytes,
+                self.transform_incoming_bytes,
                 max_request_len=self.max_request_len
             )
 
