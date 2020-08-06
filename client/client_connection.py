@@ -7,7 +7,7 @@ from lib.crypto.aes import get_cryptors
 VPN_CONNECTION_LENGTH = 1024
 
 class ClientConnection:
-    def __init__(self, client_socket, client_addr, server, sslogger, max_request_len=1024, connection_timeout=10):
+    def __init__(self, client_socket, client_addr, server, sslogger, on_end, max_request_len=1024, connection_timeout=10):
         self.client_socket = client_socket
         self.client_addr = client_addr
         self.client_addr_str = f'{client_addr[0]}:{client_addr[1]}'
@@ -15,6 +15,7 @@ class ClientConnection:
         self.sslogger = sslogger
         self.max_request_len = max_request_len
         self.connection_timeout = connection_timeout
+        self.on_end = on_end
         self.vpn_socket = None
         self.encryptor = None
         self.decryptor = None
@@ -27,12 +28,17 @@ class ClientConnection:
         shared_key = client_dhe_finish(private_key, server_resp)
         self.encryptor, self.decryptor = get_cryptors(shared_key)
 
+    def end(self):
+        self.client_socket.close()
+        self.vpn_socket.close()
+
     def run(self):
         try:
             self.vpn_connect()
         except Exception as e:
             self.sslogger.error(f"failed to connect to server error: {e}")
             self.client_socket.close()
+            self.on_end()
             return
 
         try:
@@ -54,3 +60,4 @@ class ClientConnection:
         finally:
             self.client_socket.close()
             self.vpn_socket.close()
+            self.on_end()
