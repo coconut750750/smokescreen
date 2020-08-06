@@ -34,11 +34,10 @@ class ColoredFormatter(logging.Formatter):
     def format(self, record):
         if self.use_color and record.levelname in COLORS:
             record.levelname = color_text(record.levelname, color=COLORS[record.levelname])
-
         return logging.Formatter.format(self, record)
 
 class ColoredLogger(logging.Logger):
-    FORMAT = f"[{color_text('%(name)-20s', color=CYAN, bold=True)}][%(levelname)-18s]   %(message)s"
+    FORMAT = f"[%(asctime)-30s][{color_text('%(name)-20s', color=CYAN, bold=True)}][%(levelname)-18s]   %(message)s"
     def __init__(self, name):
         logging.Logger.__init__(self, name, logging.DEBUG)                
 
@@ -54,4 +53,11 @@ class ColoredLogger(logging.Logger):
 
     def log_finished_http_req(self, protocol, method, client_bytes, incoming_bytes):
         self.debug(f"finished {color_http_method(f'{protocol} {method}')} transfering {client_bytes}b and recieving {incoming_bytes}b")
-        
+
+class SSHandler(logging.Handler):
+    def __init__(self, on_emit):
+        super().__init__()
+        self.on_emit = on_emit
+
+    def emit(self, record):
+        self.on_emit(record)

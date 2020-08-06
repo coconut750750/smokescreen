@@ -1,6 +1,9 @@
 import argparse
+import wx
+import threading
 
-from client import Proxy
+from client.client import Proxy
+from client.ui.main import MainWindow
 import lib.sslogger as sslogger
 
 parser = argparse.ArgumentParser(description='Runs a Smokescreen VPN client.')
@@ -20,8 +23,21 @@ parser.add_argument('--timeout', metavar='TIMEOUT', type=int,
                     default=10,
                     help='Default: 10. Socket timeout in seconds.')
 
-if __name__ == '__main__':
+def start_connection(window, server_ip, server_port):
     args = parser.parse_args()
+    uihandler = sslogger.SSHandler(lambda r: window.add_log(r.asctime, r.levelname, r.message))
+    logger = sslogger.ColoredLogger('root')
+    logger.addHandler(uihandler)
 
-    s = Proxy(args, sslogger.ColoredLogger('root'))
-    s.start()
+    args.server_ip = server_ip
+    args.server_port = server_port
+    
+    s = Proxy(args, logger)
+    proxy_thread = threading.Thread(target=s.start)
+    proxy_thread.setDaemon(True)
+    proxy_thread.start()
+
+if __name__ == '__main__':
+    app = wx.App(False)
+    window = MainWindow(start_connection)
+    app.MainLoop()
