@@ -41,12 +41,15 @@ class Server:
                 self.logger.info(f'recieved client at {client_address}')
                 
                 thread_name = self._getClientName(client_address)
-                connection = VPNConnection(client_socket, client_address, sslogger.ColoredLogger(thread_name), max_request_len=self.config.buffer, connection_timeout=self.config.timeout)
-
-                c = threading.Thread(
-                    name=thread_name,
-                    target=connection.run,
+                connection = VPNConnection(
+                    client_socket,
+                    client_address,
+                    sslogger.ColoredLogger(thread_name),
+                    max_request_len=self.config.buffer_size,
+                    connection_timeout=self.config.timeout
                 )
+
+                c = threading.Thread(name=thread_name, target=connection.run)
                 c.setDaemon(True)
                 c.start()
             except Exception as e:

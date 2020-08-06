@@ -1,6 +1,7 @@
 import argparse
 
-from server import Server
+from server.server import Server
+from server.config import ServerConfig
 import lib.sslogger as sslogger
 
 parser = argparse.ArgumentParser(description='Runs a Smokescreen VPN server.')
@@ -20,5 +21,12 @@ parser.add_argument('--timeout', metavar='TIMEOUT', type=int,
 if __name__ == '__main__':
     args = parser.parse_args()
 
-    s = Server(args, sslogger.ColoredLogger('root'))
+    config = ServerConfig(
+        args.hostname,
+        args.port,
+        args.buffer,
+        args.timeout
+    )
+
+    s = Server(config, sslogger.ColoredLogger('root'))
     s.start()
