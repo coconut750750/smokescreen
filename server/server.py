@@ -46,7 +46,8 @@ class Server:
                     client_address,
                     sslogger.ColoredLogger(thread_name),
                     max_request_len=self.config.buffer_size,
-                    connection_timeout=self.config.timeout
+                    connection_timeout=self.config.timeout,
+                    encrypted=self.config.encrypted,
                 )
 
                 c = threading.Thread(name=thread_name, target=connection.run)

@@ -42,10 +42,14 @@ class VPNConnection:
 
     def client_recv(self):
         buf = self.client_socket.recv(self.max_request_len)
-        return self.decryptor.update(buf).decode()
+        if self.encrypted:
+            return self.decryptor.update(buf).decode()
+        return buf.decode()
 
     def client_send(self, buf):
-        return self.client_socket.sendall(self.encryptor.update(buf))
+        if self.encrypted:
+            return self.client_socket.sendall(self.encryptor.update(buf))
+        return self.client_socket.sendall(buf)
 
     def transform_client_bytes(self, b):
         if self.encrypted:

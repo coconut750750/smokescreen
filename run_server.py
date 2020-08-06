@@ -17,6 +17,10 @@ parser.add_argument('--buffer', metavar='BUFFER_SIZE', type=int,
 parser.add_argument('--timeout', metavar='TIMEOUT', type=int,
                     default=10,
                     help='Default: 10. Socket timeout in seconds.')
+parser.add_argument('--no-enc', dest='encrypted', action='store_const',
+                    const=False, default=True,
+                    help='Client won\'t establish encrypted connection')
+
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -25,7 +29,8 @@ if __name__ == '__main__':
         args.hostname,
         args.port,
         args.buffer,
-        args.timeout
+        args.timeout,
+        args.encrypted,
     )
 
     s = Server(config, sslogger.ColoredLogger('root'))
