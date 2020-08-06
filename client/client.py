@@ -1,3 +1,4 @@
+import os
 import socket
 import signal
 import threading
@@ -7,33 +8,35 @@ from client.client_connection import ClientConnection
 
 HOSTNAME = 'localhost'
 
+def setup_network_proxy(client_ip, client_port):
+    os.system(f'networksetup -setwebproxy "Wi-fi" {client_ip} {client_port}')
+    os.system(f'networksetup -setsecurewebproxy "Wi-fi" {client_ip} {client_port}')
+    os.system('networksetup -setwebproxystate "Wi-fi" on')
+    os.system('networksetup -setsecurewebproxystate "Wi-fi" on')
+
+def teardown_network_proxy():
+    os.system('networksetup -setwebproxystate "Wi-fi" off')
+    os.system('networksetup -setsecurewebproxystate "Wi-fi" off')
+
 class Proxy:
     def __init__(self, config, logger):
         self.config = config
         self.logger = logger
         self.server = (config.server_ip, config.server_port)
 
-        signal.signal(signal.SIGINT, self.disconnect) 
-
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_socket.bind((HOSTNAME, config.client_port))
+        setup_network_proxy(HOSTNAME, config.client_port)
 
         self.logger.info(f"starting smokescreen on {HOSTNAME}:{config.client_port}")
         
         self.server_socket.listen(10)
         self.connections = {} # port : client connection object
 
-    def disconnect(self, signum, frame):
-        self.logger.info('Shutting down gracefully...')
-        for port, connection in self.connections.items():
-            connection.end()
-
-        main_thread = threading.currentThread()
-        for t in threading.enumerate():
-            if t is main_thread:
-                continue
-            t.join()
+    def disconnect(self):
+        self.logger.info('Shutting down...')
+        teardown_network_proxy()
         self.server_socket.close()
 
     def format_client_name(self, addr):

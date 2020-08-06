@@ -1,10 +1,6 @@
 import argparse
-import threading
-from tkinter import Tk
 
-from client.client import Proxy
-from client.ui.main import Main
-import lib.sslogger as sslogger
+from client.ui.app import App
 
 parser = argparse.ArgumentParser(description='Runs a Smokescreen VPN client.')
 parser.add_argument('--server-ip', '-s', metavar='SERVER_IP', type=str,
@@ -23,19 +19,8 @@ parser.add_argument('--timeout', metavar='TIMEOUT', type=int,
                     default=10,
                     help='Default: 10. Socket timeout in seconds.')
 
-def start_connection(server_ip, server_port):
-    args = parser.parse_args()
-    logger = sslogger.ColoredLogger('root')
-
-    args.server_ip = server_ip
-    args.server_port = server_port
-    
-    s = Proxy(args, logger)
-    proxy_thread = threading.Thread(target=s.start)
-    proxy_thread.setDaemon(True)
-    proxy_thread.start()
 
 if __name__ == '__main__':
-    root = Tk()
-    main = Main(root, start_connection)
-    root.mainloop()
+    args = parser.parse_args()
+    with App(args) as app:
+        app.start()

@@ -37,7 +37,7 @@ class ColoredFormatter(logging.Formatter):
         return logging.Formatter.format(self, record)
 
 class ColoredLogger(logging.Logger):
-    FORMAT = f"[%(asctime)-30s][{color_text('%(name)-20s', color=CYAN, bold=True)}][%(levelname)-18s]   %(message)s"
+    FORMAT = f"%(asctime)s [{color_text('%(name)-25s', color=CYAN, bold=True)}][%(levelname)-18s]   %(message)s"
     def __init__(self, name):
         logging.Logger.__init__(self, name, logging.DEBUG)                
 
