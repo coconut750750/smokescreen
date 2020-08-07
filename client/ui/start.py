@@ -1,17 +1,14 @@
 from tkinter import *
 from tkinter.ttk import *
 
-class Main(Frame):
+class Start(Frame):
     def __init__(self, parent, connect):
         Frame.__init__(self,parent)
         self.parent = parent
         self.connect = connect
-        self.pack()
-        self.setup_initial()
+        self.setup_widgets()
 
-    def setup_initial(self):
-        self.winfo_toplevel().title("Smokescreen")
-
+    def setup_widgets(self):
         self.ip_label = Label(self, text="Server IP:") 
         self.port_label = Label(self, text="Server Port:") 
         self.ip_label.grid(row=0, column=0, sticky=W, pady=2) 

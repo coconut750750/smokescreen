@@ -3,12 +3,18 @@ import tkinter
 import lib.sslogger as sslogger
 
 from client.client import Proxy
-from client.ui.main import Main
+from client.ui.start import Start
+from client.ui.connected import Connected
 
 class App(object):
     def __init__(self, config):
         self.root = tkinter.Tk()
         self.config = config
+        self.proxy = None
+
+        # widgets
+        self.main = None
+        self.connected = None
 
     def start_connection(self, server_ip, server_port):
         logger = sslogger.ColoredLogger('root')
@@ -21,12 +27,30 @@ class App(object):
         proxy_thread.setDaemon(True)
         proxy_thread.start()
 
+        self.main.pack_forget()
+        self.render_connected(server_ip, server_port)
+        
+    def end_connection(self):
+        self.proxy.disconnect()
+        self.connected.pack_forget()
+        self.render_start()
+
     def start(self):
-        main = Main(self.root, self.start_connection)
+        self.render_start()
+        self.root.winfo_toplevel().title("Smokescreen")
         self.root.mainloop()
+
+    def render_start(self):
+        self.main = Start(self.root, self.start_connection)
+        self.main.pack()
+
+    def render_connected(self, server_ip, server_port):
+        self.connected = Connected(self.root, f'{server_ip}:{server_port}', self.end_connection)
+        self.connected.pack()
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.proxy.disconnect()
+        if self.proxy:
+            self.proxy.disconnect()
