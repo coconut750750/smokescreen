@@ -37,6 +37,10 @@ class Proxy:
     def disconnect(self):
         self.logger.info('Shutting down...')
         teardown_network_proxy()
+
+        for port in list(self.connections):
+            self.connections[port].end()
+
         self.server_socket.close()
 
     def format_client_name(self, addr):
@@ -59,7 +63,7 @@ class Proxy:
                     client_address,
                     self.server,
                     sslogger.ColoredLogger(thread_name),
-                    lambda: self.connection_ended(client_port),
+                    self.connection_ended,
                     max_request_len=self.config.buffer,
                     connection_timeout=self.config.timeout
                 )

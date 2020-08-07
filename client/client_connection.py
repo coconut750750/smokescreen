@@ -7,15 +7,16 @@ from lib.crypto.aes import get_cryptors
 VPN_CONNECTION_LENGTH = 1024
 
 class ClientConnection:
-    def __init__(self, client_socket, client_addr, server, sslogger, on_end, max_request_len=1024, connection_timeout=10):
+    def __init__(self, client_socket, client_addr, server, sslogger, cleanup, max_request_len=1024, connection_timeout=10):
         self.client_socket = client_socket
-        self.client_addr = client_addr
-        self.client_addr_str = f'{client_addr[0]}:{client_addr[1]}'
+        self.client_ip = client_addr[0]
+        self.client_port = client_addr[1]
+        self.client_addr_str = f'{self.client_ip}:{self.client_port}'
         self.server = server
         self.sslogger = sslogger
         self.max_request_len = max_request_len
         self.connection_timeout = connection_timeout
-        self.on_end = on_end
+        self.cleanup = cleanup
         self.vpn_socket = None
         self.encryptor = None
         self.decryptor = None
@@ -30,7 +31,8 @@ class ClientConnection:
 
     def end(self):
         self.client_socket.close()
-        self.vpn_socket.close()
+        if self.vpn_socket:
+            self.vpn_socket.close()
 
     def run(self):
         try:
@@ -38,7 +40,7 @@ class ClientConnection:
         except Exception as e:
             self.sslogger.error(f"failed to connect to server error: {e}")
             self.client_socket.close()
-            self.on_end()
+            self.cleanup(self.client_port)
             return
 
         try:
@@ -60,4 +62,4 @@ class ClientConnection:
         finally:
             self.client_socket.close()
             self.vpn_socket.close()
-            self.on_end()
+            self.cleanup(self.client_port)
