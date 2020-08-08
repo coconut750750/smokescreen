@@ -32,7 +32,7 @@ class Server:
         self.server_socket.close()
 
     def _getClientName(self, addr):
-        return f'phc-{addr[0]}:{addr[1]}'
+        return f'ssc-{addr[0]}:{addr[1]}'
 
     def start(self):
         while True:

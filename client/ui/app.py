@@ -11,6 +11,7 @@ class App(object):
         self.root = tkinter.Tk()
         self.config = config
         self.proxy = None
+        self.proxy_thread = None
 
         # widgets
         self.main = None
@@ -23,15 +24,16 @@ class App(object):
         self.config.server_port = server_port
         
         self.proxy = Proxy(self.config, logger)
-        proxy_thread = threading.Thread(target=self.proxy.start)
-        proxy_thread.setDaemon(True)
-        proxy_thread.start()
+        self.proxy_thread = threading.Thread(target=self.proxy.start)
+        self.proxy_thread.setDaemon(True)
+        self.proxy_thread.start()
 
         self.main.pack_forget()
         self.render_connected(server_ip, server_port)
         
     def end_connection(self):
         self.proxy.disconnect()
+        self.proxy_thread.join()
         self.connected.pack_forget()
         self.render_start()
 

@@ -37,14 +37,13 @@ class Proxy:
     def disconnect(self):
         self.logger.info('Shutting down...')
         teardown_network_proxy()
+        self.server_socket.close()
 
         for port in list(self.connections):
             self.connections[port].end()
 
-        self.server_socket.close()
-
     def format_client_name(self, addr):
-        return f'phc-{addr[0]}:{addr[1]}'
+        return f'ssc-{addr[0]}:{addr[1]}'
 
     def connection_ended(self, port):
         if port in self.connections:

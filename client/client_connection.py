@@ -33,14 +33,14 @@ class ClientConnection:
         self.client_socket.close()
         if self.vpn_socket:
             self.vpn_socket.close()
+        self.cleanup(self.client_port)
 
     def run(self):
         try:
             self.vpn_connect()
         except Exception as e:
             self.sslogger.error(f"failed to connect to server error: {e}")
-            self.client_socket.close()
-            self.cleanup(self.client_port)
+            self.end()
             return
 
         try:
@@ -60,6 +60,4 @@ class ClientConnection:
         except Exception as e:
             self.sslogger.error(f"transfer failed: {e}")
         finally:
-            self.client_socket.close()
-            self.vpn_socket.close()
-            self.cleanup(self.client_port)
+            self.end()
